@@ -1,3 +1,60 @@
+// Theme Management
+const themeToggle = document.getElementById('theme-toggle');
+const sunIcon = document.getElementById('sun-icon');
+const moonIcon = document.getElementById('moon-icon');
+const html = document.documentElement;
+
+// Initialize theme
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+    
+    setTheme(theme);
+}
+
+function setTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    updateThemeIcons(theme);
+    
+    // Update body classes for Tailwind
+    const body = document.getElementById('body');
+    if (theme === 'dark') {
+        body.classList.remove('bg-stone-50', 'text-stone-900');
+        body.classList.add('bg-slate-950', 'text-white');
+    } else {
+        body.classList.remove('bg-slate-950', 'text-white');
+        body.classList.add('bg-stone-50', 'text-stone-900');
+    }
+}
+
+function updateThemeIcons(theme) {
+    if (theme === 'dark') {
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+    } else {
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+}
+
+// Event listener for theme toggle
+themeToggle.addEventListener('click', toggleTheme);
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+        setTheme(e.matches ? 'dark' : 'light');
+    }
+});
+
 // Register GSAP ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
 
@@ -11,9 +68,9 @@ function toggleMobileMenu() {
 window.addEventListener('scroll', () => {
     const navbar = document.getElementById('navbar');
     if (window.scrollY > 50) {
-        navbar.classList.add('bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-800');
+        navbar.classList.add('bg-slate-50/80', 'dark:bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-200', 'dark:border-slate-800', 'shadow-sm');
     } else {
-        navbar.classList.remove('bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-800');
+        navbar.classList.remove('bg-slate-50/80', 'dark:bg-slate-950/80', 'backdrop-blur-md', 'border-b', 'border-slate-200', 'dark:border-slate-800', 'shadow-sm');
     }
 });
 
@@ -59,12 +116,19 @@ function addMessage(container, text, type) {
     const div = document.createElement('div');
     div.className = `flex ${type === 'user' ? 'justify-end' : 'justify-start'} message-enter`;
     
+    const isDark = html.getAttribute('data-theme') === 'dark';
     const bubble = document.createElement('div');
-    bubble.className = `max-w-[80%] px-4 py-2 rounded-2xl text-sm ${
-        type === 'user' 
-            ? 'bg-indigo-600 text-white rounded-br-md' 
-            : 'bg-slate-800 text-slate-200 rounded-bl-md border border-slate-700'
-    }`;
+    
+    if (type === 'user') {
+        bubble.className = 'max-w-[80%] px-4 py-2 rounded-2xl text-sm bg-indigo-600 text-white rounded-br-md';
+    } else {
+        bubble.className = `max-w-[80%] px-4 py-2 rounded-2xl text-sm rounded-bl-md border ${
+            isDark 
+                ? 'bg-slate-800 text-slate-200 border-slate-700' 
+                : 'bg-white text-stone-700 border-stone-200 shadow-sm'
+        }`;
+    }
+    
     bubble.textContent = text;
     
     div.appendChild(bubble);
@@ -90,8 +154,8 @@ stats.forEach(stat => {
     const item = document.createElement('div');
     item.className = 'inline-flex items-center mx-8';
     item.innerHTML = `
-        <span class="text-2xl font-bold text-white mr-2">${stat.value}</span>
-        <span class="text-slate-400 text-sm uppercase tracking-wider">${stat.label}</span>
+        <span class="text-2xl font-bold theme-text mr-2">${stat.value}</span>
+        <span class="theme-text-secondary text-sm uppercase tracking-wider">${stat.label}</span>
     `;
     marquee.appendChild(item);
 });
@@ -101,8 +165,8 @@ stats.forEach(stat => {
     const item = document.createElement('div');
     item.className = 'inline-flex items-center mx-8';
     item.innerHTML = `
-        <span class="text-2xl font-bold text-white mr-2">${stat.value}</span>
-        <span class="text-slate-400 text-sm uppercase tracking-wider">${stat.label}</span>
+        <span class="text-2xl font-bold theme-text mr-2">${stat.value}</span>
+        <span class="theme-text-secondary text-sm uppercase tracking-wider">${stat.label}</span>
     `;
     marquee.appendChild(item);
 });
@@ -156,6 +220,7 @@ function restartDemo() {
     
     const messages = scenarios[currentScenario];
     let index = 0;
+    const isDark = html.getAttribute('data-theme') === 'dark';
     
     function addDemoMessage() {
         if (index >= messages.length) return;
@@ -165,11 +230,16 @@ function restartDemo() {
         div.className = `flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} message-enter`;
         
         const content = document.createElement('div');
-        content.className = `max-w-[85%] px-4 py-3 rounded-xl text-sm ${
-            msg.sender === 'user' 
-                ? 'bg-indigo-600 text-white rounded-br-md' 
-                : 'bg-slate-800 text-slate-200 rounded-bl-md border border-slate-700'
-        }`;
+        
+        if (msg.sender === 'user') {
+            content.className = 'max-w-[85%] px-4 py-3 rounded-xl text-sm bg-indigo-600 text-white rounded-br-md';
+        } else {
+            content.className = `max-w-[85%] px-4 py-3 rounded-xl text-sm rounded-bl-md border ${
+                isDark 
+                    ? 'bg-slate-800 text-slate-200 border-slate-700' 
+                    : 'bg-white text-stone-700 border-stone-200 shadow-sm'
+            }`;
+        }
         
         if (msg.sender === 'ai') {
             // Typewriter effect for AI
@@ -190,7 +260,7 @@ function restartDemo() {
                     clearInterval(typeInterval);
                     if (msg.action) {
                         const badge = document.createElement('div');
-                        badge.className = 'mt-2 inline-flex items-center gap-1 text-xs text-green-400';
+                        badge.className = 'mt-2 inline-flex items-center gap-1 text-xs text-green-500';
                         badge.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Action completed';
                         content.appendChild(badge);
                     }
@@ -263,4 +333,31 @@ document.addEventListener('mousemove', (e) => {
         duration: 1,
         ease: "power2.out"
     });
+});
+
+// Initialize theme on load
+initTheme();
+
+// Re-render chat when theme changes to update bubble colors
+themeToggle.addEventListener('click', () => {
+    setTimeout(() => {
+        const container = document.getElementById('chat-container');
+        const messages = Array.from(container.children);
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        
+        messages.forEach(msg => {
+            const bubble = msg.querySelector('div');
+            if (bubble && !bubble.classList.contains('bg-indigo-600')) {
+                // Update AI message colors
+                if (isDark) {
+                    bubble.className = bubble.className.replace('bg-white text-stone-700 border-stone-200 shadow-sm', 'bg-slate-800 text-slate-200 border-slate-700');
+                } else {
+                    bubble.className = bubble.className.replace('bg-slate-800 text-slate-200 border-slate-700', 'bg-white text-stone-700 border-stone-200 shadow-sm');
+                }
+            }
+        });
+        
+        // Restart demo to apply new theme
+        restartDemo();
+    }, 100);
 });
